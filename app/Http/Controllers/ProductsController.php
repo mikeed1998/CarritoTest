@@ -20,35 +20,35 @@
 
         // Cambia el método addToCart en ProductsController
         public function addToCart($id)
-{
-    $product = Product::findOrFail($id);
+        {
+            $product = Product::findOrFail($id);
 
-    $cart = session()->get('cart', []);
+            $cart = session()->get('cart', []);
 
-    if (isset($cart[$id])) {
-        $cart[$id]['quantity']++;
-    } else {
-        $cart[$id] = [
-            "product_name" => $product->product_name,
-            "photo" => $product->photo,
-            "price" => $product->price,
-            "quantity" => 1
-        ];
-    }
+            if (isset($cart[$id])) {
+                $cart[$id]['quantity']++;
+            } else {
+                $cart[$id] = [
+                    "product_name" => $product->product_name,
+                    "photo" => $product->photo,
+                    "price" => $product->price,
+                    "quantity" => 1
+                ];
+            }
 
-    session()->put('cart', $cart);
+            session()->put('cart', $cart);
 
-    $totalUnits = array_sum(array_column($cart, 'quantity'));
+            $totalUnits = array_sum(array_column($cart, 'quantity'));
 
-    $response = [
-        'success' => true,
-        'message' => 'Product added to cart successfully!',
-        'cart_count' => $totalUnits,
-        'total_units' => $totalUnits,  // Agrega esta línea para pasar $totalUnits
-    ];
+            $response = [
+                'success' => true,
+                'message' => 'Product added to cart successfully!',
+                'cart_count' => $totalUnits,
+                'total_units' => $totalUnits,  // Agrega esta línea para pasar $totalUnits
+            ];
 
-    return response()->json($response);
-}
+            return response()->json($response);
+        }
 
 
 
@@ -85,14 +85,33 @@
 
 
         public function remove(Request $request)
-        {
-            if($request->id) {
-                $cart = session()->get('cart');
-                if(isset($cart[$request->id])) {
-                    unset($cart[$request->id]);
-                    session()->put('cart', $cart);
-                }
-                session()->flash('success', 'Product successfully removed!');
-            }
+{
+    if ($request->id) {
+        $cart = session()->get('cart');
+        if (isset($cart[$request->id])) {
+            // Restar el subtotal del producto eliminado al total
+            $total = session('cartTotal', 0) - ($cart[$request->id]['price'] * $cart[$request->id]['quantity']);
+
+            // Eliminar el producto del carrito
+            unset($cart[$request->id]);
+
+            // Actualizar el total en la sesión
+            session()->put('cartTotal', $total);
+
+            // Actualizar la variable de sesión 'cart'
+            session()->put('cart', $cart);
         }
+
+        session()->flash('success', 'Product successfully removed!');
+
+        $response = [
+            'success' => true,
+            'message' => 'Product successfully removed!',
+            'total' => $total,
+            'cart_count' => count($cart),
+        ];
+
+        return response()->json($response);
+    }
+}
     }

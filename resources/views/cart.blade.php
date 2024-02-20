@@ -43,7 +43,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="5" class="text-right"><h3><strong>Total ${{ $total }}</strong></h3></td>
+                <td colspan="5" class="text-right"><h3><p>Total <strong id="cartTotal">${{ $total }}</strong></p></h3></td>
             </tr>
             <tr>
                 <td colspan="5" class="text-right">
@@ -57,47 +57,50 @@
 
 @section('scripts')
     <script type="text/javascript">
-$(".cart_update").change(function (e) {
-    e.preventDefault();
+        $(".cart_update").change(function (e) {
+            e.preventDefault();
 
-    var ele = $(this);
-    var rowId = ele.data("row-id");
-    var quantity = ele.val();
+            var ele = $(this);
+            var rowId = ele.data("row-id");
+            var quantity = ele.val();
 
-    $.ajax({
-        url: '{{ route('update_cart') }}',
-        method: "patch",
-        data: {
-            _token: '{{ csrf_token() }}',
-            id: rowId,
-            quantity: quantity
-        },
-        success: function (response) {
-            // Actualiza la subtotal directamente
-            var formattedSubtotal = '$' + parseFloat(response.subtotal).toFixed(2);
-            $('#subtotal_' + rowId).text(formattedSubtotal);
+            $.ajax({
+                url: '{{ route('update_cart') }}',
+                method: "patch",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    id: rowId,
+                    quantity: quantity
+                },
+                success: function (response) {
+                    // Actualiza la subtotal directamente
+                    var formattedSubtotal = '$' + parseFloat(response.subtotal).toFixed(2);
+                    $('#subtotal_' + rowId).text(formattedSubtotal);
 
-            // Muestra notificación Toastr en éxito
-            toastr.success('Cart successfully updated!', 'Success');
+                    // Muestra notificación Toastr en éxito
+                    toastr.success('Cart successfully updated!', 'Success');
 
-            // Llama a la función para actualizar el total
-            updateTotal(response.total);
-        },
-        error: function (xhr, status, error) {
-            // Muestra notificación Toastr en error de la solicitud AJAX
-            toastr.error('An error occurred while processing your request.', 'Error');
-            console.error(xhr.responseText);
+                    // Llama a la función para actualizar el total
+                    updateTotal(response.total);
+                },
+                error: function (xhr, status, error) {
+                    // Muestra notificación Toastr en error de la solicitud AJAX
+                    toastr.error('An error occurred while processing your request.', 'Error');
+                    console.error(xhr.responseText);
+                }
+            });
+
+            $(document).trigger('cartUpdated');
+        });
+
+        // Función para actualizar el total
+        function updateTotal(newTotal) {
+            // Actualiza el total en la vista
+            $('#cartTotal').text('$' + parseFloat(newTotal).toFixed(2));
+            console.log('Total updated:', newTotal);
         }
-    });
-});
 
-// Función para actualizar el total
-function updateTotal(newTotal) {
-    // Actualiza el total en la vista
-    $('#cartTotal').text('$' + parseFloat(newTotal).toFixed(2));
-}
-
-$(".cart_remove").click(function (e) {
+        $(".cart_remove").click(function (e) {
     e.preventDefault();
 
     var ele = $(this);
@@ -115,19 +118,36 @@ $(".cart_remove").click(function (e) {
                 // Remueve la fila de la tabla directamente
                 ele.parents("tr").remove();
 
-                // Actualiza el total directamente
-                updateTotal(response.total);
+                // Obtiene el subtotal del producto eliminado y verifica que sea un número
+                var subtotalRemoved = parseFloat($('#subtotal_' + rowId).text().replace('$', '')) || 0;
+
+                // Verifica que el total actual sea un número
+                var currentTotal = parseFloat($('#cartTotal').text().replace('$', '')) || 0;
+
+                // Calcula el nuevo total restando el subtotal del producto eliminado
+                var newTotal = currentTotal - subtotalRemoved;
+
+                console.log('New Total:', newTotal);
+
+                // Actualiza el total en la vista
+                updateTotal(newTotal);
 
                 // Muestra notificación Toastr en éxito
-                toastr.success('Product successfully removed!', 'Success');
+                toastr.success('El producto ha sido vaciado del carrito!', 'Success');
+
+                // Recarga la página después de eliminar el producto
+                location.reload();
             },
             error: function (xhr, status, error) {
                 // Muestra notificación Toastr en error de la solicitud AJAX
-                toastr.error('An error occurred while processing your request.', 'Error');
+                toastr.error('Hubo un problema para eliminar.', 'Error');
                 console.error(xhr.responseText);
             }
         });
     }
+    $(document).trigger('cartUpdated');
 });
+
+
     </script>
 @endsection
