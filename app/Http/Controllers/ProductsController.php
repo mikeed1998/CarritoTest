@@ -85,33 +85,33 @@
 
 
         public function remove(Request $request)
-{
-    if ($request->id) {
-        $cart = session()->get('cart');
-        if (isset($cart[$request->id])) {
-            // Restar el subtotal del producto eliminado al total
-            $total = session('cartTotal', 0) - ($cart[$request->id]['price'] * $cart[$request->id]['quantity']);
+        {
+            if ($request->id) {
+                $cart = session()->get('cart');
+                if (isset($cart[$request->id])) {
+                    // Restar el subtotal del producto eliminado al total
+                    $total = session('cartTotal', 0) - ($cart[$request->id]['price'] * $cart[$request->id]['quantity']);
 
-            // Eliminar el producto del carrito
-            unset($cart[$request->id]);
+                    // Eliminar el producto del carrito
+                    unset($cart[$request->id]);
 
-            // Actualizar el total en la sesión
-            session()->put('cartTotal', $total);
+                    // Actualizar el total en la sesión
+                    session()->put('cartTotal', $total);
 
-            // Actualizar la variable de sesión 'cart'
-            session()->put('cart', $cart);
+                    // Actualizar la variable de sesión 'cart'
+                    session()->put('cart', $cart);
+                }
+
+                session()->flash('success', 'Product successfully removed!');
+
+                $response = [
+                    'success' => true,
+                    'message' => 'Product successfully removed!',
+                    'total' => $total,
+                    'cart_count' => count($cart),
+                ];
+
+                return response()->json($response);
+            }
         }
-
-        session()->flash('success', 'Product successfully removed!');
-
-        $response = [
-            'success' => true,
-            'message' => 'Product successfully removed!',
-            'total' => $total,
-            'cart_count' => count($cart),
-        ];
-
-        return response()->json($response);
-    }
-}
     }
