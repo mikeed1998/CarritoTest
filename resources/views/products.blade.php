@@ -1,27 +1,29 @@
 @extends('layout')
-    
+
 @section('content')
-     
-<div class="row">
-    @foreach($products as $product)
-        <div class="col-xs-18 col-sm-6 col-md-4" style="margin-top:10px;">
-            <div class="img_thumbnail productlist">
-                <img src="{{ asset('img/'.$product->photo) }}" class="img-fluid">
-                <div class="caption">
-                    <h4>{{ $product->product_name }}</h4>
-                    <p>{{ $product->product_description }}</p>
-                    <p><strong>Price: </strong> ${{ $product->price }}</p>
-                    <p class="btn-holder">
-                        <a href="#" class="btn btn-primary btn-block text-center btn-add-to-cart" role="button" data-product-id="{{ $product->id }}">
-                            Add to cart
-                        </a>
-                    </p>
+
+    <div class="container py-5">
+        <div class="row">
+            @foreach($products as $product)
+                <div class="col-xs-18 col-sm-6 col-md-4">
+                    <div class="img_thumbnail productlist">
+                        <img src="{{ asset('img/'.$product->photo) }}" class="img-fluid">
+                        <div class="caption">
+                            <h4>{{ $product->product_name }}</h4>
+                            <p>{{ $product->product_description }}</p>
+                            <p><strong>Price: </strong> ${{ $product->price }}</p>
+                            <p class="btn-holder">
+                                <a href="#" class="btn btn-primary btn-block text-center btn-add-to-cart" role="button" data-product-id="{{ $product->id }}">
+                                    Add to cart
+                                </a>
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            @endforeach
         </div>
-    @endforeach
-</div>
-     
+    </div>
+
 @endsection
 
 @section('scripts')

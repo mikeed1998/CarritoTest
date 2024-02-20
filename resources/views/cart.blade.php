@@ -27,9 +27,13 @@
                         </td>
                         <td data-th="Price">${{ $details['price'] }}</td>
                         <td data-th="Quantity">
-                            <input type="number" value="{{ $details['quantity'] }}" class="form-control quantity cart_update" min="1" />
+                            <input type="number" value="{{ $details['quantity'] }}" class="form-control quantity cart_update" data-row-id="{{ $id }}" min="1" />
                         </td>
-                        <td data-th="Subtotal" class="text-center">${{ $details['price'] * $details['quantity'] }}</td>
+
+                        <td data-th="Subtotal" class="text-center">
+                            <span id="subtotal_{{ $id }}">${{ $details['price'] * $details['quantity'] }}</span>
+                        </td>
+
                         <td class="actions" data-th="">
                             <button class="btn btn-danger btn-sm cart_remove"><i class="fa fa-trash-o"></i> Delete</button>
                         </td>
@@ -53,71 +57,77 @@
 
 @section('scripts')
     <script type="text/javascript">
-    
-        $(".cart_update").change(function (e) {
-            e.preventDefault();
+$(".cart_update").change(function (e) {
+    e.preventDefault();
 
-            var ele = $(this);
-            var rowId = ele.parents("tr").attr("data-id");
-            var quantity = ele.parents("tr").find(".quantity").val();
+    var ele = $(this);
+    var rowId = ele.data("row-id");
+    var quantity = ele.val();
 
-            $.ajax({
-                url: '{{ route('update_cart') }}',
-                method: "patch",
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    id: rowId,
-                    quantity: quantity
-                },
-                success: function (response) {
-                    // Actualiza la subtotal directamente
-                    ele.parents("tr").find(".text-center").text('$' + (response.price * response.quantity));
+    $.ajax({
+        url: '{{ route('update_cart') }}',
+        method: "patch",
+        data: {
+            _token: '{{ csrf_token() }}',
+            id: rowId,
+            quantity: quantity
+        },
+        success: function (response) {
+            // Actualiza la subtotal directamente
+            var formattedSubtotal = '$' + parseFloat(response.subtotal).toFixed(2);
+            $('#subtotal_' + rowId).text(formattedSubtotal);
 
-                    // Actualiza el total directamente
-                    $('#cartTotal').text('$' + response.total);
+            // Muestra notificación Toastr en éxito
+            toastr.success('Cart successfully updated!', 'Success');
 
-                    // Muestra notificación Toastr en éxito
-                    toastr.success('Cart successfully updated!', 'Success');
-                },
-                error: function (xhr, status, error) {
-                    // Muestra notificación Toastr en error de la solicitud AJAX
-                    toastr.error('An error occurred while processing your request.', 'Error');
-                    console.error(xhr.responseText);
-                }
-            });
-        });
+            // Llama a la función para actualizar el total
+            updateTotal(response.total);
+        },
+        error: function (xhr, status, error) {
+            // Muestra notificación Toastr en error de la solicitud AJAX
+            toastr.error('An error occurred while processing your request.', 'Error');
+            console.error(xhr.responseText);
+        }
+    });
+});
 
-        $(".cart_remove").click(function (e) {
-            e.preventDefault();
+// Función para actualizar el total
+function updateTotal(newTotal) {
+    // Actualiza el total en la vista
+    $('#cartTotal').text('$' + parseFloat(newTotal).toFixed(2));
+}
 
-            var ele = $(this);
-            var rowId = ele.parents("tr").attr("data-id");
+$(".cart_remove").click(function (e) {
+    e.preventDefault();
 
-            if (confirm("Do you really want to remove?")) {
-                $.ajax({
-                    url: '{{ route('remove_from_cart') }}',
-                    method: "DELETE",
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        id: rowId
-                    },
-                    success: function (response) {
-                        // Remueve la fila de la tabla directamente
-                        ele.parents("tr").remove();
+    var ele = $(this);
+    var rowId = ele.parents("tr").attr("data-id");
 
-                        // Actualiza el total directamente
-                        $('#cartTotal').text('$' + response.total);
+    if (confirm("Do you really want to remove?")) {
+        $.ajax({
+            url: '{{ route('remove_from_cart') }}',
+            method: "DELETE",
+            data: {
+                _token: '{{ csrf_token() }}',
+                id: rowId
+            },
+            success: function (response) {
+                // Remueve la fila de la tabla directamente
+                ele.parents("tr").remove();
 
-                        // Muestra notificación Toastr en éxito
-                        toastr.success('Product successfully removed!', 'Success');
-                    },
-                    error: function (xhr, status, error) {
-                        // Muestra notificación Toastr en error de la solicitud AJAX
-                        toastr.error('An error occurred while processing your request.', 'Error');
-                        console.error(xhr.responseText);
-                    }
-                });
+                // Actualiza el total directamente
+                updateTotal(response.total);
+
+                // Muestra notificación Toastr en éxito
+                toastr.success('Product successfully removed!', 'Success');
+            },
+            error: function (xhr, status, error) {
+                // Muestra notificación Toastr en error de la solicitud AJAX
+                toastr.error('An error occurred while processing your request.', 'Error');
+                console.error(xhr.responseText);
             }
         });
+    }
+});
     </script>
 @endsection
